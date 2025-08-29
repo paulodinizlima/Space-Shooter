@@ -31,9 +31,13 @@ public class PlayerController : MonoBehaviour
 
 	private GameController gameController;
 
+	private Rigidbody rb;
+	private Vector3 touchStartPos;
+
 	void Start()
 	{
 		gameController = FindObjectOfType<GameController>();
+		rb = GetComponent<Rigidbody>();
 	}
 	
 	void Update ()
@@ -53,30 +57,39 @@ public class PlayerController : MonoBehaviour
 
 				GetComponent<AudioSource>().Play();
 			}
-			else
-			{
-				//sem bateria, não dispara
-				Debug.Log("Sem bateria!");
-			}
-			
 		}
 	}
 
 	void FixedUpdate ()
 	{
+		Vector3 movement = Vector3.zero;
+#if UNITY_STANDALONE || UNITY_EDITOR
+		//CONTROLE NO PC
 		float moveHorizontal = Input.GetAxis ("Horizontal");
 		float moveVertical = Input.GetAxis ("Vertical");
+		movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
 
-		Vector3 movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
-		GetComponent<Rigidbody>().velocity = movement * speed;
+#elif UNITY_IOS || UNITY_ANDROID
+		//CONTROLE NO CELULAR
+		if(Input.touchCount > 0)
+		{
+			Touch touch = Input.GetTouch(0);
+			if(touch.phase == TouchPhase.Moved)
+			{
+				Vector2 delta = touch.deltaPosition;
+				movement = new Vector3(delta.x, 0.0f, delta.y) * 0.05f; //0.05f = sensibilidade
+			}
+		}
+#endif
 		
-		GetComponent<Rigidbody>().position = new Vector3
+		rb.velocity = movement * speed;		
+		rb.position = new Vector3
 		(
-			Mathf.Clamp (GetComponent<Rigidbody>().position.x, boundary.xMin, boundary.xMax), 
+			Mathf.Clamp (rb.position.x, boundary.xMin, boundary.xMax), 
 			0.0f, 
-			Mathf.Clamp (GetComponent<Rigidbody>().position.z, boundary.zMin, boundary.zMax)
+			Mathf.Clamp (rb.position.z, boundary.zMin, boundary.zMax)
 		);
 		
-		GetComponent<Rigidbody>().rotation = Quaternion.Euler (0.0f, 0.0f, GetComponent<Rigidbody>().velocity.x * -tilt);
+		rb.rotation = Quaternion.Euler (0.0f, 0.0f, rb.velocity.x * -tilt);
 	}
 }

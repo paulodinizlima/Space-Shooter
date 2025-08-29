@@ -11,13 +11,22 @@ public class EvasiveManeuver : MonoBehaviour
     public Vector2 startWait;
     public Vector2 maneuverTime;
     public Vector2 maneuverWait;
+    public int rotationMesh;
     private float currentSpeed;
     private float targetManeuver;
+
+    private Rigidbody rb;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+    }
+    
 
     // Start is called before the first frame update
     void Start()
     {
-        currentSpeed = GetComponent<Rigidbody>().velocity.z;
+        currentSpeed = rb.velocity.z;
         StartCoroutine(Evade());    
     }
 
@@ -36,14 +45,14 @@ public class EvasiveManeuver : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
-        float newManeuver = Mathf.MoveTowards(GetComponent<Rigidbody>().velocity.x, targetManeuver, smoothing * Time.deltaTime);
-        GetComponent<Rigidbody>().velocity = new Vector3(newManeuver, 0.0f, currentSpeed);
-        GetComponent<Rigidbody>().position = new Vector3
+        float newManeuver = Mathf.MoveTowards(rb.velocity.x, targetManeuver, smoothing * Time.deltaTime);
+        rb.velocity = new Vector3(newManeuver, 0.0f, currentSpeed);
+        rb.position = new Vector3
         (
-            Mathf.Clamp(GetComponent<Rigidbody>().position.x, boundary.xMin, boundary.xMax),
+            Mathf.Clamp(rb.position.x, boundary.xMin, boundary.xMax),
             0.0f,
-            Mathf.Clamp(GetComponent<Rigidbody>().position.z, boundary.zMin, boundary.zMax)
+            Mathf.Clamp(rb.position.z, boundary.zMin, boundary.zMax)
         );
-        GetComponent<Rigidbody>().rotation = Quaternion.Euler(0, 0, GetComponent<Rigidbody>().velocity.x * -tilt);
+        rb.rotation = Quaternion.Euler(0, rotationMesh, rb.velocity.x * -tilt);
     }
 }

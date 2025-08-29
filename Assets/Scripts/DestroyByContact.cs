@@ -6,6 +6,7 @@ public class DestroyByContact : MonoBehaviour
 {
     public GameObject explosion;
     public GameObject boltExplosion;
+    public GameObject enemyBoltCollision;
 
     public GameObject[] bonusPrefabs; // Array de prefabs de bônus
     [Range(0f, 1f)]
@@ -47,10 +48,11 @@ public class DestroyByContact : MonoBehaviour
             return;
 
         // explosão genérica para inimigo ou asteroide
-        /*if (explosion != null && (CompareTag("Enemy") || CompareTag("Asteroid")))
+        if (explosion != null && CompareTag("Asteroid"))
         {
             Instantiate(explosion, transform.position, transform.rotation);
-        }*/
+            Destroy(gameObject);
+        }
 
         // dano no jogador
         if (other.CompareTag("Player"))
@@ -79,7 +81,7 @@ public class DestroyByContact : MonoBehaviour
         // se for inimigo, aplica dano e só destrói se a vida chegar a 0
         if (CompareTag("Enemy"))
         {
-            enemyHealth--; //cada colisão com tiro diminui 1 de vida
+            enemyHealth--; //cada colisão com tiro diminui 1 de vida            
             if (enemyHealth <= 0)
             {
                 if (explosion != null)
@@ -90,8 +92,7 @@ public class DestroyByContact : MonoBehaviour
             }
             else
             {
-                // Asteroide continua sendo destruído normalmente
-                Destroy(gameObject);
+                Instantiate(enemyBoltCollision, transform.position, transform.rotation);
             }
         }
     }

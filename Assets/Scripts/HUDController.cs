@@ -29,12 +29,12 @@ public class HUDController : MonoBehaviour
     void Start()
     {
         //Valores iniciais
-       // maxHealth = 100;
-       // health = maxHealth;
-       // maxAmmo = 30;
-       // ammo = maxAmmo;
-       // battery = 100;
-       // maxBattery = 1000;
+        maxHealth = 100;
+        health = maxHealth;
+        // maxAmmo = 30;
+        // ammo = maxAmmo;
+        //battery = 100;
+        //maxBattery = 1000;
         score = 0;
         UpdateHUD();
     }
