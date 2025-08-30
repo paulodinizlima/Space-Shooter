@@ -14,7 +14,6 @@ public class DestroyByContact : MonoBehaviour
 
     public int scoreValue = 1;
     public int damageValue = 10; // Valor de dano ao jogador
-
     public int enemyHealth = 3; // Vida do inimigo
 
     private GameController gameController;
@@ -44,13 +43,14 @@ public class DestroyByContact : MonoBehaviour
             return;
 
         // ignora projéteis inimigos batendo em inimigos
-        if (CompareTag("Enemy") && other.CompareTag("BoltEnemy"))
+        if ((CompareTag("Enemy") || CompareTag("BossEnemy")) && other.CompareTag("BoltEnemy"))
             return;
 
         // explosão genérica para inimigo ou asteroide
         if (explosion != null && CompareTag("Asteroid"))
         {
             Instantiate(explosion, transform.position, transform.rotation);
+            gameController.AddScore(scoreValue); //score ao destruir o asteroide
             Destroy(gameObject);
         }
 
@@ -66,33 +66,47 @@ public class DestroyByContact : MonoBehaviour
             }
         }
 
-        // adiciona score só 1 vez
-        gameController.AddScore(scoreValue);
-
-        if (!other.CompareTag("Player"))
+        // se for projétil do jogador, sempre destruímos o projétil
+        if (other.CompareTag("Bolt"))
+        {
             Destroy(other.gameObject);
 
-        // drop de bônus só em asteroide
-        if (CompareTag("Asteroid") && bonusPrefabs != null && bonusPrefabs.Length > 0 && Random.value < bonusDropChance)
-        {
-            Instantiate(bonusPrefabs[Random.Range(0, bonusPrefabs.Length)], transform.position, Quaternion.identity);
-        }
-
-        // se for inimigo, aplica dano e só destrói se a vida chegar a 0
-        if (CompareTag("Enemy"))
-        {
-            enemyHealth--; //cada colisão com tiro diminui 1 de vida            
-            if (enemyHealth <= 0)
+            //inimigo normal
+            if (CompareTag("Enemy"))
             {
-                if (explosion != null)
+                enemyHealth--;
+                if (enemyHealth <= 0)
                 {
-                    Instantiate(explosion, transform.position, transform.rotation);
+                    if (explosion != null)
+                        Instantiate(explosion, transform.position, transform.rotation);
+
+                    gameController.AddScore(scoreValue);
+                    Destroy(gameObject);
                 }
-                Destroy(gameObject);
+                else if (enemyBoltCollision != null)
+                {
+                    Instantiate(enemyBoltCollision, transform.position, transform.rotation);
+                }
             }
-            else
+
+            // boss -> usa o BossController
+            if (CompareTag("BossEnemy"))
             {
-                Instantiate(enemyBoltCollision, transform.position, transform.rotation);
+                BossController boss = GetComponent<BossController>();
+                if (boss != null)
+                {
+                    boss.TakeDamage(2); //aqui define quanto de dano o tiro do player causa
+                }
+                if (enemyBoltCollision != null)
+                {
+                    Instantiate(enemyBoltCollision, transform.position, transform.rotation);
+                }
+            }
+
+            // drop de bônus só em asteroide
+            if (CompareTag("Asteroid") && bonusPrefabs != null && bonusPrefabs.Length > 0 && Random.value < bonusDropChance)
+            {
+                Instantiate(bonusPrefabs[Random.Range(0, bonusPrefabs.Length)], transform.position, Quaternion.identity);
             }
         }
     }

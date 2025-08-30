@@ -12,6 +12,12 @@ public class GameController : MonoBehaviour
     public float spawnWait;
     public float startWait;
     public float waveWait;
+    public int totalWaves = 5; //número total de waves antes do boss
+
+    [Header("Boss")]
+    public GameObject bossPrefab;
+    public Transform bossSpawnPoint;
+    private bool bossSpawned = false;
 
     [Header("UI")]
     public HUDController hud;
@@ -31,7 +37,7 @@ public class GameController : MonoBehaviour
     [Header("Energia da Nave (Laser)")]
     public float maxBattery = 100.0f;
     public float currentBattery;
-    public float batteryDrainPerShot = 10f;
+    public float batteryDrainPerShot = 5f;
     public float batteryRechargeRate = 20f; //unidades por segundo
 
     public Image barraDeBateria; // Barra de bateria no HUD
@@ -66,8 +72,8 @@ public class GameController : MonoBehaviour
         hud.SetHealth(health, maxHealth);
         hud.SetBattery(currentBattery, maxBattery);
         hud.AddScore(0);
-        StartCoroutine(SpawnWaves());
 
+        StartCoroutine(SpawnWaves());
     }
 
     void Update()
@@ -102,8 +108,9 @@ public class GameController : MonoBehaviour
     IEnumerator SpawnWaves()
     {
         yield return new WaitForSeconds(startWait);
-        while (true)
+        for (int wave = 0; wave < totalWaves; wave++)
         {
+            Debug.Log("Wave " + wave);
             for (int i = 0; i < hazardCount; i++)
             {
                 GameObject hazard = hazards[Random.Range(0, hazards.Length)];
@@ -113,12 +120,32 @@ public class GameController : MonoBehaviour
                 yield return new WaitForSeconds(spawnWait);
             }
             yield return new WaitForSeconds(waveWait);
+
             if (gameOver)
             {
                 restartText.text = "Press 'R' to Restart";
                 restart = true;
                 break;
             }
+        }
+        //terminou as waves -> chama o Boss
+        if (!bossSpawned)
+        {
+            SpawnBoss();
+        }
+    }
+
+    void SpawnBoss()
+    {
+        if (bossPrefab != null && bossSpawnPoint != null)
+        {
+            Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation);
+            bossSpawned = true;
+            Debug.Log("Boss entrou na arena!");
+        }
+        else
+        {
+            Debug.Log("BossPrefab ou BossSpawnPoint não foram configurados no Inspector");
         }
     }
     
