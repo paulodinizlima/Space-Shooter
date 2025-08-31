@@ -6,90 +6,140 @@ using System;
 [Serializable]
 public class Boundary
 {
-	// limites de movimento do player
-	public float xMin = -6.0f;
-	public float xMax = 6.0f;
-	public float zMin = -20.0f;
-	public float zMax = 20.0f;
+    public float xMin = -6.0f;
+    public float xMax = 6.0f;
+    public float zMin = -20.0f;
+    public float zMax = 20.0f;
 }
 
 public class PlayerController : MonoBehaviour
 {
-    public float speed;
-	public float tilt;
-	public Boundary boundary;
+    [Header("Movimento")]
+    public float speed = 10f;
+    public float tilt = 5f;
+    public Boundary boundary;
 
-	[Header("Disparo")]
-	public GameObject shot;
-	public Transform shotSpawn1;
-	public Transform shotSpawn2;
-	public float fireRate;
-	public float minFireRate = 0.1f; // taxa mínima de disparo
-	 
-	private float nextFire;
-	private bool useFirstSpawn = true; // alternador
+    [Header("Disparo")]
+    public GameObject shot;
+    public Transform shotSpawn1;
+    public Transform shotSpawn2;
+    public float fireRate = 0.25f;
 
-	private GameController gameController;
+    private float nextFire;
+    private bool useFirstSpawn = true;
 
-	private Rigidbody rb;
-	private Vector3 touchStartPos;
+    private GameController gameController;
+    private Rigidbody rb;
 
-	void Start()
-	{
-		gameController = FindObjectOfType<GameController>();
-		rb = GetComponent<Rigidbody>();
-	}
-	
-	void Update ()
-	{
-		if (Input.GetButton("Fire1") && Time.time > nextFire)
-		{
-			if (gameController.UseBattery(gameController.batteryDrainPerShot))
-			{
-				nextFire = Time.time + fireRate;
-				// controla qual spawn usar
-				if (useFirstSpawn)
-					Instantiate(shot, shotSpawn1.position, shotSpawn1.rotation);
-				else
-					Instantiate(shot, shotSpawn2.position, shotSpawn2.rotation);
+    private bool hasControl = true;
 
-				useFirstSpawn = !useFirstSpawn; // inverte para o próximo disparo
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        gameController = FindObjectOfType<GameController>();
+    }
 
-				GetComponent<AudioSource>().Play();
-			}
-		}
-	}
+    void Update()
+    {
+        if (hasControl)
+        {
+            HandleShooting();
+        }
+    }
 
-	void FixedUpdate ()
-	{
-		Vector3 movement = Vector3.zero;
+    void FixedUpdate()
+    {
+        if (!hasControl) return;
+
+        Vector3 movement = Vector3.zero;
+
 #if UNITY_STANDALONE || UNITY_EDITOR
-		//CONTROLE NO PC
-		float moveHorizontal = Input.GetAxis ("Horizontal");
-		float moveVertical = Input.GetAxis ("Vertical");
-		movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
+        float moveHorizontal = Input.GetAxis("Horizontal");
+        float moveVertical = Input.GetAxis("Vertical");
+        movement = new Vector3(moveHorizontal, 0f, moveVertical);
 
 #elif UNITY_IOS || UNITY_ANDROID
-		//CONTROLE NO CELULAR
-		if(Input.touchCount > 0)
-		{
-			Touch touch = Input.GetTouch(0);
-			if(touch.phase == TouchPhase.Moved)
-			{
-				Vector2 delta = touch.deltaPosition;
-				movement = new Vector3(delta.x, 0.0f, delta.y) * 0.05f; //0.05f = sensibilidade
-			}
-		}
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            if (touch.phase == TouchPhase.Moved)
+            {
+                Vector2 delta = touch.deltaPosition;
+                movement = new Vector3(delta.x, 0f, delta.y) * 0.05f; // sensibilidade
+            }
+        }
 #endif
-		
-		rb.velocity = movement * speed;		
-		rb.position = new Vector3
-		(
-			Mathf.Clamp (rb.position.x, boundary.xMin, boundary.xMax), 
-			0.0f, 
-			Mathf.Clamp (rb.position.z, boundary.zMin, boundary.zMax)
-		);
-		
-		rb.rotation = Quaternion.Euler (0.0f, 0.0f, rb.velocity.x * -tilt);
-	}
+
+        rb.velocity = movement * speed;
+
+        rb.position = new Vector3(
+            Mathf.Clamp(rb.position.x, boundary.xMin, boundary.xMax),
+            0f,
+            Mathf.Clamp(rb.position.z, boundary.zMin, boundary.zMax)
+        );
+
+        rb.rotation = Quaternion.Euler(0f, 0f, rb.velocity.x * -tilt);
+    }
+
+    private void HandleShooting()
+    {
+        if (Input.GetButton("Fire1") && Time.time > nextFire)
+        {
+            if (gameController.UseBattery(gameController.batteryDrainPerShot))
+            {
+                nextFire = Time.time + fireRate;
+
+                Transform spawn = useFirstSpawn ? shotSpawn1 : shotSpawn2;
+                Instantiate(shot, spawn.position, spawn.rotation);
+
+                useFirstSpawn = !useFirstSpawn;
+
+                GetComponent<AudioSource>()?.Play();
+            }
+        }
+    }
+
+    // chamado pelo GameController quando o player vence
+    public void OnVictory()
+    {
+        hasControl = false;
+        rb.velocity = Vector3.zero;
+        StartCoroutine(VictorySequence());
+    }
+
+    private IEnumerator VictorySequence()
+    {
+        yield return new WaitForSeconds(0.5f); // breve pausa antes de iniciar
+
+        // Move para o centro horizontal
+        Vector3 startPos = transform.position;
+        Vector3 centerPos = new Vector3(0f, startPos.y, startPos.z);
+        float duration = 1f;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            transform.position = Vector3.Lerp(startPos, centerPos, elapsed / duration);
+            transform.rotation = Quaternion.identity;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+        transform.position = centerPos;
+
+        // Move para cima (fora da tela)
+        startPos = transform.position;
+        Vector3 exitPos = new Vector3(centerPos.x, centerPos.y, 30f);
+        elapsed = 0f;
+        duration = 2f;
+
+        while (elapsed < duration)
+        {
+            transform.position = Vector3.Lerp(startPos, exitPos, elapsed / duration);
+            transform.rotation = Quaternion.identity;
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.position = exitPos;
+    }
 }

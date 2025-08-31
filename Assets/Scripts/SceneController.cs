@@ -24,4 +24,13 @@ public class SceneController : MonoBehaviour
     {
         Application.Quit();
     }
+
+    void Update()
+    {
+        //inicia o jogo quando pressionar Enter
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            SceneManager.LoadScene(1);
+        }
+    }
 }
