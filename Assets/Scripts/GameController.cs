@@ -24,6 +24,7 @@ public class GameController : MonoBehaviour
     public Text scoreText;
     public Text restartText;
     public Text gameOverText;
+    public Text victoryText;
 
     [Header("Player")]
     public static GameObject SelectedShip;
@@ -48,12 +49,14 @@ public class GameController : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("Start GameController: gameOver=" + gameOver);
         hud = FindObjectOfType<HUDController>();
 
         gameOver = false;
         restart = false;
         restartText.text = "";
         gameOverText.text = "";
+        victoryText.text = "";
         score = 0;
 
         health = maxHealth;
@@ -121,12 +124,7 @@ public class GameController : MonoBehaviour
             }
             yield return new WaitForSeconds(waveWait);
 
-            if (gameOver)
-            {
-                restartText.text = "Press 'R' to Restart";
-                restart = true;
-                break;
-            }
+            if (gameOver) break;
         }
         //terminou as waves -> chama o Boss
         if (!bossSpawned)
@@ -137,6 +135,7 @@ public class GameController : MonoBehaviour
 
     void SpawnBoss()
     {
+        Debug.Log("Tentando spawn do boss, bossPrefab=" + bossPrefab + " bossSpawnPoint=" + bossSpawnPoint);
         if (bossPrefab != null && bossSpawnPoint != null)
         {
             Instantiate(bossPrefab, bossSpawnPoint.position, bossSpawnPoint.rotation);
@@ -148,7 +147,7 @@ public class GameController : MonoBehaviour
             Debug.Log("BossPrefab ou BossSpawnPoint não foram configurados no Inspector");
         }
     }
-    
+
     public void AddScore(int newScoreValue)
     {
         score += newScoreValue;
@@ -171,5 +170,30 @@ public class GameController : MonoBehaviour
     {
         gameOverText.text = "Game Over!";
         gameOver = true;
+        StartCoroutine(ShowRestartText());
+    }
+
+    public void Victory()
+    {
+        gameOver = true; //impede spawn de inimigos
+        PlayerController player = FindObjectOfType<PlayerController>();
+        if (player != null) player.OnVictory();
+
+        StartCoroutine(ShowVictoryText());
+    }
+
+    IEnumerator ShowVictoryText()
+    {
+        yield return new WaitForSeconds(4);
+        victoryText.text = "Victory!";
+        restartText.text = "Press 'R' to Restart";
+        restart = true;
+    }
+
+    IEnumerator ShowRestartText()
+    {
+        yield return new WaitForSeconds(4);
+        restartText.text = "Press 'R' to Restart";
+        restart = true;
     }
 }

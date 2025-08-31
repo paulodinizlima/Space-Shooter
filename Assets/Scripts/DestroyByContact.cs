@@ -64,6 +64,12 @@ public class DestroyByContact : MonoBehaviour
             {
                 Instantiate(boltExplosion, transform.position, transform.rotation);
             }
+
+            //destrói o projétil inimigo ao acertar o jogador
+            if (CompareTag("BoltEnemy"))
+            {
+                Destroy(gameObject);
+            }
         }
 
         // se for projétil do jogador, sempre destruímos o projétil
