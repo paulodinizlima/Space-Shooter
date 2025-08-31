@@ -186,8 +186,7 @@ public class GameController : MonoBehaviour
     {
         yield return new WaitForSeconds(4);
         victoryText.text = "Victory!";
-        restartText.text = "Press 'R' to Restart";
-        restart = true;
+        StartCoroutine(ShowRestartText());
     }
 
     IEnumerator ShowRestartText()

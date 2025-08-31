@@ -65,16 +65,25 @@ public class BossController : MonoBehaviour
             bossHealthBar.gameObject.SetActive(true);
         }
 
-        if (firePoints.Length >= 4)
+        if (firePoints.Length >= 7)
         {
             canShoot[2] = false;
             canShoot[3] = false;
+            canShoot[4] = false;
+            canShoot[5] = false;
+            canShoot[6] = false;
         }
     }
 
     // Update is called once per frame
     private void Update()
     {
+        if (bossHealthBar != null)
+        {
+            bossHealthBar.transform.LookAt(Camera.main.transform);
+            bossHealthBar.transform.Rotate(0, 180, 0); // evita ficar de costas
+        }
+
         if (!hasEntered)
         {
             //Boss desce até a posição final
@@ -96,6 +105,12 @@ public class BossController : MonoBehaviour
         {
             AttackPattern();
             nextFire = Time.time + fireRate;
+        }
+
+        //travar a rotação da barra para sempre olhar para a câmera
+        if (bossHealthBar != null)
+        {
+            bossHealthBar.transform.rotation = Quaternion.LookRotation(Camera.main.transform.forward);
         }
     }
 
@@ -141,12 +156,20 @@ public class BossController : MonoBehaviour
                     GetComponent<AudioSource>().Play();
                 }
                 break;
+            case 4:
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        ShootOnceFromActivePoints();
+                    }
+                    GetComponent<AudioSource>().Play();
+                }
+                break;
         }
     }
 
     public void TakeDamage(int damage)
     {
-        Debug.Log("Tomou dano");
         currentHealth -= damage;
         if (bossHealthBar != null)
             bossHealthBar.value = currentHealth;
@@ -162,13 +185,13 @@ public class BossController : MonoBehaviour
         float hpPercent = (float)currentHealth / maxHealth;
         int previousPhase = currentPhase;
 
-        if (hpPercent > 0.5f)
+        if (hpPercent > 0.7f)
         {
             currentPhase = 1;
             moveSpeed = 2f;
             fireRate = 2f;
         }
-        else if (hpPercent > 0.2f)
+        else if (hpPercent > 0.5f)
         {
             currentPhase = 2;
             moveSpeed = 3f;
@@ -177,14 +200,22 @@ public class BossController : MonoBehaviour
             canShoot[2] = true;
             canShoot[3] = true;
         }
-        else
+        else if (hpPercent > 0.2f)
         {
             currentPhase = 3;
+            moveSpeed = 3f;
+            fireRate = 1.2f;
+            // Ativa mais canhões
+            canShoot[4] = true;
+            canShoot[5] = true;
+        }
+        else
+        {
+            currentPhase = 4;
             moveSpeed = 4f;
             fireRate = 1;
             // Ativa mais canhões
-            canShoot[2] = true;
-            canShoot[3] = true;
+            canShoot[6] = true;
         }
         //ajusta o offset para evitar "pulo" ao mudar de fase
         if (currentPhase != previousPhase)
@@ -196,7 +227,6 @@ public class BossController : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("Boss.Die() chamado");
         if (bossHealthBar != null)
             bossHealthBar.gameObject.SetActive(false);
 
@@ -207,18 +237,9 @@ public class BossController : MonoBehaviour
         GameController gc = FindObjectOfType<GameController>();
         if (gc != null)
         {
-            Debug.Log("Chamando GameController.Victory()");
             gc.Victory();
         }
 
-        PlayerController player = FindObjectOfType<PlayerController>();
-        if (player != null)
-        {
-            Debug.Log("Chamando PlayerController.OnVictory()");
-            player.OnVictory();
-        }
-
         Destroy(gameObject);
-        Debug.Log("Boss destruído");
     }
 }

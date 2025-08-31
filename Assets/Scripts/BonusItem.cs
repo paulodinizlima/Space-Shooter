@@ -57,9 +57,9 @@ public class BonusItem : MonoBehaviour
                     gameController.health = Mathf.Min(gameController.health + extraLifeAmount, gameController.maxHealth);
                     hudController.SetHealth(gameController.health, 100);
                     break;
-                case BonusType.Ammo:
-                    playerController.fireRate = Mathf.Min(playerController.fireRate - cannonFireRate, playerController.minFireRate);
-                    break;
+                //case BonusType.Ammo:
+                //    playerController.fireRate = Mathf.Min(playerController.fireRate - cannonFireRate, playerController.minFireRate);
+                //    break;
             }
             if (explosion != null)
             {
